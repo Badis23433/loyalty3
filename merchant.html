@@ -184,38 +184,38 @@ function sw(id){['dashboard','caisse','wallet','clients','notifs','rewards'].for
 function getSess(){try{return JSON.parse(sessionStorage.getItem('los_merchant_sess')||'null')}catch(e){return null}}
 function logout(){sessionStorage.removeItem('los_merchant_sess');location.reload()}
 async function login(){
-  const email = norm(document.getElementById('email').value);
-  const pass = document.getElementById('pass').value.trim();
-  if(!email || !pass) return msg('Email et mot de passe obligatoires','err');
+  const email = document.getElementById("email").value.trim();
+  const pass = document.getElementById("pass").value.trim();
 
-  const btn = document.querySelector('#auth .btn');
-  btn.disabled = true;
-
-  try{
-    const { data: m, error } = await sb
-      .from('merchants')
-      .select('id,shop_name,email,pass,card_color,pts_per_euro,first_reward,validity,active')
-      .ilike('email', email)
-      .eq('pass', pass)
-      .maybeSingle();
-
-    if(error) throw error;
-    if(!m) return msg('Email ou mot de passe incorrect','err');
-    if(m.active === false) return msg('Compte suspendu','err');
-
-    sessionStorage.setItem('los_merchant_sess', JSON.stringify({
-      id: m.id,
-      shopName: m.shop_name,
-      email: m.email
-    }));
-
-    await loginAs(m.id, m.shop_name, m.email);
-  }catch(e){
-    console.error('LOGIN MERCHANT ERROR', e);
-    msg(e.message || 'Erreur de connexion','err');
-  }finally{
-    btn.disabled = false;
+  if(!email || !pass){
+    alert("Remplis tous les champs");
+    return;
   }
+
+  console.log("Tentative login:", email);
+
+  const { data, error } = await supabase
+    .from("merchants")
+    .select("*")
+    .eq("email", email)
+    .eq("pass", pass)
+    .single();
+
+  console.log("RESULT:", data);
+  console.log("ERROR:", error);
+
+  if(error || !data){
+    alert("Identifiants incorrects");
+    return;
+  }
+
+  // Sauvegarde session
+  localStorage.setItem("merchant", JSON.stringify(data));
+
+  alert("Connexion réussie");
+
+  // Redirection ou affichage app
+  location.reload();
 }
 function msg(t,type='ok'){const el=document.getElementById('msg'); if(!t){el.style.display='none';el.className='msg';return;} el.textContent=t; el.className='msg '+type; el.style.display='block'}
 async function start(){const s=getSess(); if(!s) return; document.getElementById('auth').classList.add('h'); document.getElementById('app').classList.remove('h'); document.getElementById('shop-pill').textContent=s.shopName||'—'; await loadAll(); renderWallet(); sw('dashboard')}
