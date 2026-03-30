@@ -184,14 +184,38 @@ function sw(id){['dashboard','caisse','wallet','clients','notifs','rewards'].for
 function getSess(){try{return JSON.parse(sessionStorage.getItem('los_merchant_sess')||'null')}catch(e){return null}}
 function logout(){sessionStorage.removeItem('los_merchant_sess');location.reload()}
 async function login(){
-  const email=norm(document.getElementById('email').value), pass=document.getElementById('pass').value.trim();
-  if(!email||!pass) return msg('Email et mot de passe obligatoires','err');
+  const email = norm(document.getElementById('email').value);
+  const pass = document.getElementById('pass').value.trim();
+  if(!email || !pass) return msg('Email et mot de passe obligatoires','err');
+
+  const btn = document.querySelector('#auth .btn');
+  btn.disabled = true;
+
   try{
-    const {data,error}=await sb.from('merchants').select('id,shop_name,email,pass,card_color,pts_per_euro,first_reward,validity,active').eq('email',email).eq('pass',pass).limit(1);
-    if(error) throw error; const m=data?.[0]; if(!m) return msg('Identifiants invalides','err'); if(m.active===false) return msg('Compte suspendu','err');
-    sessionStorage.setItem('los_merchant_sess',JSON.stringify({id:m.id,shopName:m.shop_name,email:m.email}));
-    await start();
-  }catch(e){msg(e.message||'Erreur de connexion','err')}
+    const { data: m, error } = await sb
+      .from('merchants')
+      .select('id,shop_name,email,pass,card_color,pts_per_euro,first_reward,validity,active')
+      .ilike('email', email)
+      .eq('pass', pass)
+      .maybeSingle();
+
+    if(error) throw error;
+    if(!m) return msg('Email ou mot de passe incorrect','err');
+    if(m.active === false) return msg('Compte suspendu','err');
+
+    sessionStorage.setItem('los_merchant_sess', JSON.stringify({
+      id: m.id,
+      shopName: m.shop_name,
+      email: m.email
+    }));
+
+    await loginAs(m.id, m.shop_name, m.email);
+  }catch(e){
+    console.error('LOGIN MERCHANT ERROR', e);
+    msg(e.message || 'Erreur de connexion','err');
+  }finally{
+    btn.disabled = false;
+  }
 }
 function msg(t,type='ok'){const el=document.getElementById('msg'); if(!t){el.style.display='none';el.className='msg';return;} el.textContent=t; el.className='msg '+type; el.style.display='block'}
 async function start(){const s=getSess(); if(!s) return; document.getElementById('auth').classList.add('h'); document.getElementById('app').classList.remove('h'); document.getElementById('shop-pill').textContent=s.shopName||'—'; await loadAll(); renderWallet(); sw('dashboard')}
