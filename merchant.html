@@ -240,7 +240,55 @@ function renderSwatches(){const row=document.getElementById('swatches'); if(!row
 function pickColor(c){state.cardColor=c; renderSwatches()}
 function renderClients(){const box=document.getElementById('clients-table'); const q=norm(document.getElementById('c-search')?.value||''); const wf=document.getElementById('c-wallet-filter')?.value||''; let data=state.clients.slice(); if(q) data=data.filter(c=>norm(c.name).includes(q)||norm(c.email).includes(q)||norm(c.phone).includes(q)); if(wf==='apple') data=data.filter(c=>(c.wallet||[]).includes('apple')); else if(wf==='samsung') data=data.filter(c=>(c.wallet||[]).includes('samsung')); else if(wf==='none') data=data.filter(c=>!(c.wallet||[]).length); box.innerHTML=`<table class="table"><thead><tr><th>Client</th><th>Email</th><th>Niveau</th><th>Points</th><th>Wallet</th><th>Action</th></tr></thead><tbody>${data.map(c=>`<tr><td>${esc(c.name||'Client')}</td><td>${esc(c.email||'—')}</td><td>${esc(c.tier||'Silver')}</td><td>${Number(c.points||0)}</td><td>${(c.wallet||[]).join(', ')||'—'}</td><td><button class="ab" onclick="openClientModal('${c.id}')">Éditer</button></td></tr>`).join('')}</tbody></table>`||'<div class="subtle">Aucun client.</div>'}
 function openClientModal(id=null){const c=id?state.clients.find(x=>x.id===id):{name:'',email:'',phone:'',points:0,tier:'Silver',wallet:[],merchant_id:getSess()?.id}; state.selectedClientId=id||null; document.getElementById('client-modal-title').textContent=id?'Modifier client':'Nouveau client'; document.getElementById('client-modal-body').innerHTML=`<input type="hidden" id="c-id" value="${id||''}"><div class="row"><div class="fieldRow"><div class="lbl">Nom</div><input class="inp" id="c-name" value="${esc(c.name||'')}"></div><div class="fieldRow"><div class="lbl">Email</div><input class="inp" id="c-email" type="email" value="${esc(c.email||'')}"></div></div><div class="row"><div class="fieldRow"><div class="lbl">Téléphone</div><input class="inp" id="c-phone" value="${esc(c.phone||'')}"></div><div class="fieldRow"><div class="lbl">Mot de passe (optionnel)</div><input class="inp" id="c-pass" type="password" placeholder="Laisser vide pour conserver"></div></div><div class="row"><div class="fieldRow"><div class="lbl">Points initiaux</div><input class="inp" id="c-points" type="number" value="${Number(c.points||0)}"></div><div class="fieldRow"><div class="lbl">Niveau</div><select class="inp" id="c-tier"><option ${c.tier==='Silver'?'selected':''}>Silver</option><option ${c.tier==='Gold'?'selected':''}>Gold</option><option ${c.tier==='Platinum'?'selected':''}>Platinum</option></select></div></div><div class="fieldRow"><div class="lbl">Wallet</div><select class="inp" id="c-wallet"><option value="">Aucun</option><option value="apple">Apple</option><option value="samsung">Samsung</option><option value="both">Apple + Samsung</option></select></div><div style="display:flex;gap:8px;margin-top:10px"><button class="btn sec" onclick="cm('client-modal')" type="button">Annuler</button><button class="btn" onclick="saveClient()" type="button">Enregistrer</button></div>`; const ws=document.getElementById('c-wallet'); if(ws){ws.value=(Array.isArray(c.wallet)&&c.wallet.includes('apple')&&c.wallet.includes('samsung'))?'both':(Array.isArray(c.wallet)&&c.wallet.includes('apple')?'apple':(Array.isArray(c.wallet)&&c.wallet.includes('samsung')?'samsung':''));} om('client-modal'); }
-async function saveClient(){const s=getSess(); const id=document.getElementById('c-id').value||null; const name=document.getElementById('c-name').value.trim(); const email=norm(document.getElementById('c-email').value); const phone=document.getElementById('c-phone').value.trim(); const pass=document.getElementById('c-pass').value.trim(); const points=Number(document.getElementById('c-points').value||0); const tier=document.getElementById('c-tier').value; let wallet=[]; const w=document.getElementById('c-wallet').value; if(w==='apple') wallet=['apple']; else if(w==='samsung') wallet=['samsung']; else if(w==='both') wallet=['apple','samsung']; if(!name||!email) return showToast('Nom et email requis','err'); try{if(id){const obj={name,email,phone,points,tier,wallet}; if(pass) obj.pass=pass; const {error}=await sb.from('clients').update(obj).eq('id',id); if(error) throw error; showToast('Client modifié','ok')}else{const {data:exists}=await sb.from('clients').select('id').eq('merchant_id',s.id).eq('email',email).limit(1); if(exists?.length) return showToast('Client déjà existant pour ce commerce','err'); const obj={merchant_id:s.id,name,email,phone,pass:pass||'client123',points,tier,wallet,visits:0}; const {error}=await sb.from('clients').insert(obj); if(error) throw error; showToast('Client ajouté','ok')} cm('client-modal'); await loadAll(); }catch(e){showToast(e.message||'Erreur','err')}}
+async function saveClient(){
+  const s = getSess();
+  const id = document.getElementById('c-id').value || null;
+  const name = document.getElementById('c-name').value.trim();
+  const email = norm(document.getElementById('c-email').value);
+  const phone = document.getElementById('c-phone').value.trim();
+  const pass = document.getElementById('c-pass').value.trim();
+  const points = Number(document.getElementById('c-points').value || 0);
+  const tier = document.getElementById('c-tier').value;
+
+  let wallet = [];
+  const w = document.getElementById('c-wallet').value;
+  if(w === 'apple') wallet = ['apple'];
+  else if(w === 'samsung') wallet = ['samsung'];
+  else if(w === 'both') wallet = ['apple','samsung'];
+
+  if(!name || !email) return showToast('Nom et email requis','err');
+
+  try{
+    if(id){
+      const obj = { name, email, phone, points, tier, wallet };
+      if(pass) obj.pass = pass;
+
+      const { error } = await sb.from('clients').update(obj).eq('id', id);
+      if(error) throw error;
+      showToast('Client modifié','ok');
+    }else{
+      const { data: exists } = await sb
+        .from('clients')
+        .select('id')
+        .eq('merchant_id', s.id)
+        .eq('email', email)
+        .limit(1);
+
+      if(exists?.length) return showToast('Client déjà existant pour ce commerce','err');
+
+      const obj = { merchant_id: s.id, name, email, phone, pass: pass || 'client123', points, tier, wallet, visits: 0 };
+      const { error } = await sb.from('clients').insert(obj);
+      if(error) throw error;
+      showToast('Client ajouté','ok');
+    }
+
+    cm('client-modal');
+    await loadAll();
+  }catch(e){
+    console.error('SAVE CLIENT ERROR', e);
+    showToast(e.message || 'Erreur','err');
+  }
+}
 function exportCSV(){const headers=['name','email','phone','points','tier','wallet']; const rows=[headers.join(',')].concat(state.clients.map(c=>headers.map(h=>`"${String(c[h]??(h==='wallet'?(c.wallet||[]).join('|'):'')).replace(/"/g,'""')}"`).join(','))); const blob=new Blob([rows.join('\n')],{type:'text/csv;charset=utf-8;'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='loyaltyos_clients.csv'; a.click();}
 function renderNotifPreview(){const title=document.getElementById('n-title').value; const body=document.getElementById('n-body').value; document.getElementById('notif-preview').innerHTML=`<div class="item"><div class="ico" style="background:rgba(108,99,255,.14);color:var(--accent2)">🔔</div><div class="grow"><div class="name">${esc(title)}</div><div class="meta">${esc(body)}</div></div></div>`; document.getElementById('notif-history').innerHTML=state.notifHistory.slice(0,10).map(n=>`<div class="item"><div class="ico" style="background:rgba(108,99,255,.14);color:var(--accent2)">✉</div><div class="grow"><div class="name">${esc(n.title||'Notification')}</div><div class="meta">${fmt(n.created_at||n.sent_at)}</div></div></div>`).join('')||'<div class="subtle">Aucun envoi.</div>'}
 async function sendNotif(){const s=getSess(); const title=document.getElementById('n-title').value.trim(); const body=document.getElementById('n-body').value.trim(); if(!title||!body) return showToast('Titre et message requis','err'); try{await sb.from('notifications').insert({merchant_id:s.id,title,body,target:'all',sent_at:new Date().toISOString()}); showToast('Notification envoyée','ok'); await loadAll(); }catch(e){showToast(e.message||'Erreur','err')}}
