@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>LoyaltyOS — Accueil</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0D0D0F;--bg2:#151518;--bg3:#1D1D20;--txt:#F1F1EE;--txt2:#9A9A98;--txt3:#636361;--accent:#6C63FF;--accent2:#A8A2FF;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);--r:18px;--rm:12px;--good:#28C58F;--bad:#FF5C5C}
+html,body{min-height:100%;font-family:'Inter',sans-serif;background:radial-gradient(900px 500px at 50% 0%, rgba(108,99,255,.16), transparent 60%), var(--bg);color:var(--txt)}
+body{padding:24px;display:flex;align-items:center;justify-content:center}
+.app{width:100%;max-width:1100px}
+.hero{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;align-items:stretch}
+.brand{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));border:1px solid var(--border);border-radius:28px;padding:28px;min-height:360px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.logo{font-family:'Syne',sans-serif;font-size:18px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--txt3)}
+.logo span{color:var(--accent2)}
+.h1{font-family:'Syne',sans-serif;font-size:clamp(34px,5vw,60px);line-height:1.02;font-weight:800;max-width:12ch;margin-top:18px}
+.sub{margin-top:14px;font-size:15px;line-height:1.7;color:var(--txt2);max-width:56ch}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}
+.chip{padding:10px 14px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid var(--border);font-size:12px;color:var(--txt2)}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:24px;padding:20px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;background:var(--bg3);padding:4px;border-radius:18px;margin-bottom:18px}
+.tab{min-height:44px;border:none;border-radius:14px;background:transparent;color:var(--txt2);font:700 12px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.08em;cursor:pointer}
+.tab.on{background:rgba(255,255,255,.06);color:var(--txt)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.lbl{font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em}
+.inp{min-height:44px;padding:12px 14px;border-radius:14px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt);font:500 14px 'Inter',sans-serif;outline:none;width:100%}
+.inp:focus{border-color:var(--accent)}
+.btn{min-height:44px;border:none;border-radius:14px;background:var(--accent);color:#fff;font:800 14px 'Syne',sans-serif;cursor:pointer;width:100%;padding:12px 16px}
+.btn.sec{background:transparent;border:1px solid var(--border2);color:var(--txt)}
+.note{font-size:12px;color:var(--txt3);line-height:1.6;margin-top:10px}
+.msg{min-height:22px;font-size:12px;margin-bottom:10px;display:none;padding:10px 12px;border-radius:12px}
+.msg.ok{display:block;background:rgba(40,197,143,.1);border:1px solid rgba(40,197,143,.25);color:var(--good)}
+.msg.err{display:block;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);color:var(--bad)}
+.footer{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:14px;color:var(--txt3);font-size:12px;flex-wrap:wrap}
+.link{color:var(--accent2);text-decoration:none}
+.hid{position:fixed;right:0;bottom:0;width:10px;height:10px;opacity:.01;z-index:9999}
+@media(max-width:900px){body{padding:16px}.hero{grid-template-columns:1fr}.brand{min-height:auto;padding:22px}}
+@media(max-width:640px){.row{grid-template-columns:1fr}.tabs{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="hero">
+      <section class="brand">
+        <div>
+          <div class="logo">loyalty<span>OS</span></div>
+          <h1 class="h1">Un portail unique pour vos cartes fidélité.</h1>
+          <p class="sub">Connexion client, connexion commerçant et administration centralisée — avec une interface mobile-first, sombre et rapide.</p>
+          <div class="chips">
+            <div class="chip">Supabase + Realtime</div>
+            <div class="chip">SPA HTML/JS/CSS</div>
+            <div class="chip">Multi-commerce</div>
+            <div class="chip">Wallet prêt à brancher</div>
+          </div>
+        </div>
+        <div class="footer">
+          <span>Accès sécurisé par email / mot de passe</span>
+          <a class="link" href="client.html">Aller à l’app client</a>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="tabs">
+          <button class="tab on" id="tab-client" onclick="switchMode('client')">Client</button>
+          <button class="tab" id="tab-merchant" onclick="switchMode('merchant')">Commerçant</button>
+          <button class="tab" id="tab-admin" onclick="switchMode('admin')">Admin</button>
+        </div>
+
+        <div id="msg" class="msg"></div>
+
+        <form id="client-form" autocomplete="on">
+          <div class="row">
+            <div class="field"><label class="lbl">Nom complet</label><input class="inp" id="c-name" placeholder="Sophie Martin"></div>
+            <div class="field"><label class="lbl">Code commerce (optionnel)</label><input class="inp" id="c-code" placeholder="ID, email ou nom du commerce"></div>
+          </div>
+          <div class="row">
+            <div class="field"><label class="lbl">Email</label><input class="inp" id="c-email" type="email" placeholder="vous@exemple.fr"></div>
+            <div class="field"><label class="lbl">Mot de passe</label><input class="inp" id="c-pass" type="password" placeholder="Votre mot de passe"></div>
+          </div>
+          <button class="btn" type="button" onclick="handleClient('login')">Connexion client</button>
+          <div style="height:10px"></div>
+          <button class="btn sec" type="button" onclick="handleClient('signup')">Créer une carte</button>
+          <div class="note">La création de carte utilise un commerce actif ou le code saisi. Un même client peut avoir plusieurs cartes sur plusieurs commerces.</div>
+        </form>
+
+        <form id="merchant-form" style="display:none">
+          <div class="field"><label class="lbl">Email commerçant</label><input class="inp" id="m-email" type="email" placeholder="shop@exemple.fr"></div>
+          <div class="field"><label class="lbl">Mot de passe</label><input class="inp" id="m-pass" type="password" placeholder="Votre mot de passe"></div>
+          <button class="btn" type="button" onclick="handleMerchant()">Connexion commerçant</button>
+          <div class="note">Aucune inscription n’est proposée ici. Le commerçant se connecte seulement.</div>
+        </form>
+
+        <form id="admin-form" style="display:none">
+          <div class="field"><label class="lbl">Email administrateur</label><input class="inp" id="a-email" type="email" placeholder="admin@..." autocomplete="username"></div>
+          <div class="field"><label class="lbl">Mot de passe</label><input class="inp" id="a-pass" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+          <button class="btn" type="button" onclick="goAdmin()">Accès admin</button>
+          <div class="note">Le bouton d’accès discret à l’administration reste disponible sur la page principale.</div>
+        </form>
+      </section>
+    </div>
+  </div>
+
+  <a class="hid" href="admin.html" aria-label="Accès administrateur"></a>
+
+<script>
+const SB_URL='https://qqcfmbpixdeiczobqnqa.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxY2ZtYnBpeGRlaWN6b2JxbnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MjMxMDMsImV4cCI6MjA5MDM5OTEwM30.qTQvfalYS-V39M37BJdMQbXeMJBJTuzM44RMzoqmW5I';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+const ACTIVE_CLASSES={client:'tab-client',merchant:'tab-merchant',admin:'tab-admin'};
+function norm(v){return String(v||'').trim().toLowerCase()}
+function setMsg(text,type='ok'){const el=document.getElementById('msg'); if(!text){el.className='msg';el.style.display='none';el.textContent='';return;} el.className='msg '+type;el.textContent=text;el.style.display='block';}
+function switchMode(mode){['client','merchant','admin'].forEach(m=>{document.getElementById(m+'-form').style.display=m===mode?'block':'none';document.getElementById(ACTIVE_CLASSES[m]).classList.toggle('on',m===mode);});setMsg('');}
+async function firstActiveMerchant(){const {data}=await sb.from('merchants').select('id,shop_name,email').eq('active',true).limit(1);return data?.[0]||null;}
+async function resolveMerchant(code){if(!code) return await firstActiveMerchant(); const q=norm(code); const {data}=await sb.from('merchants').select('id,shop_name,email').or(`id.eq.${q},email.ilike.%${q}%,shop_name.ilike.%${q}%`).eq('active',true).limit(1); return data?.[0]||await firstActiveMerchant();}
+async function handleClient(mode){
+  const email=norm(document.getElementById('c-email').value); const pass=document.getElementById('c-pass').value.trim(); const name=document.getElementById('c-name').value.trim(); const code=document.getElementById('c-code').value.trim();
+  if(!email||!pass) return setMsg('Email et mot de passe sont obligatoires.','err');
+  if(mode==='signup'&&!name) return setMsg('Le nom complet est obligatoire pour l’inscription.','err');
+  try{
+    const merchant=await resolveMerchant(code);
+    if(!merchant) return setMsg('Aucun commerce actif disponible.','err');
+    if(mode==='signup'){
+      const {data:existing}=await sb.from('clients').select('id').eq('merchant_id',merchant.id).eq('email',email).limit(1);
+      if(existing?.length) return setMsg('Cette carte existe déjà pour ce commerce. Connectez-vous.','err');
+      const payload={merchant_id:merchant.id,name,email,pass,points:0,tier:'Silver',wallet:[],visits:0};
+      const {error}=await sb.from('clients').insert(payload);
+      if(error) throw error;
+      sessionStorage.setItem('los_client_auth',JSON.stringify({email,pass}));
+      setMsg('Carte créée avec succès.','ok');
+      location.href='client.html';
+      return;
+    }
+    const {data, error}=await sb.from('clients').select('id,merchant_id,name,email,phone,points,tier,wallet,visits,created_at').eq('email',email).eq('pass',pass).order('created_at',{ascending:false});
+    if(error) throw error;
+    if(!data?.length) return setMsg('Email ou mot de passe incorrect.','err');
+    sessionStorage.setItem('los_client_auth',JSON.stringify({email,pass}));
+    location.href='client.html';
+  }catch(err){setMsg(err.message||'Erreur lors de la connexion.','err')}
+}
+async function handleMerchant(){
+  const email=norm(document.getElementById('m-email').value); const pass=document.getElementById('m-pass').value.trim();
+  if(!email||!pass) return setMsg('Email et mot de passe sont obligatoires.','err');
+  try{
+    const {data,error}=await sb.from('merchants').select('id,shop_name,email,active').eq('email',email).eq('pass',pass).limit(1);
+    if(error) throw error;
+    const merchant=data?.[0];
+    if(!merchant) return setMsg('Identifiants commerçant invalides.','err');
+    if(merchant.active===false) return setMsg('Compte commerçant suspendu.','err');
+    sessionStorage.setItem('los_merchant_sess',JSON.stringify({id:merchant.id,shopName:merchant.shop_name,email:merchant.email}));
+    location.href='merchant.html';
+  }catch(err){setMsg(err.message||'Erreur de connexion.','err')}
+}
+async function goAdmin(){
+  const email=norm(document.getElementById('a-email').value); const pass=document.getElementById('a-pass').value.trim();
+  if(!email||!pass) return setMsg('Email et mot de passe sont obligatoires.','err');
+  try{
+    const {data:cfg}=await sb.from('admin_config').select('key,value');
+    const map=Object.fromEntries((cfg||[]).map(x=>[x.key,x.value]));
+    const ok=email===norm(map.admin_email||'admin@loyaltyos.fr') && pass===(map.admin_pass||'Admin2024!');
+    if(!ok) return setMsg('Identifiants administrateur invalides.','err');
+    sessionStorage.setItem('los_admin',email);
+    location.href='admin.html';
+  }catch(err){setMsg(err.message||'Impossible d’ouvrir l’administration.','err')}
+}
+</script>
+</body>
+</html>

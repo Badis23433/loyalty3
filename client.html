@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LoyaltyOS — Client</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0} :root{--bg:#0D0D0F;--bg2:#151518;--bg3:#1D1D20;--card:#17171A;--txt:#F1F1EE;--txt2:#9A9A98;--txt3:#646462;--accent:#6C63FF;--accent2:#A8A2FF;--green:#28C58F;--red:#FF5C5C;--gold:#C9933A;--border:rgba(255,255,255,.08);--border2:rgba(255,255,255,.14);--r:18px;--rm:12px}
+html,body{min-height:100%;font-family:'Inter',sans-serif;background:var(--bg);color:var(--txt)}
+body{background:radial-gradient(1000px 500px at 50% -10%, rgba(108,99,255,.18), transparent 55%), var(--bg)}
+#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px} #auth.h{display:none}
+.box{width:100%;max-width:420px;background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));border:1px solid var(--border);border-radius:24px;padding:22px;box-shadow:0 25px 70px rgba(0,0,0,.35)}
+.logo{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;text-align:center;letter-spacing:.08em;margin-bottom:6px}.logo span{color:var(--accent2)}
+.sub{font-size:13px;color:var(--txt2);text-align:center;margin-bottom:18px;line-height:1.5}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--bg3);padding:4px;border-radius:16px;margin-bottom:16px}.tab{min-height:44px;border:none;border-radius:12px;background:transparent;color:var(--txt2);font:700 12px 'Inter',sans-serif;text-transform:uppercase;letter-spacing:.08em;cursor:pointer}.tab.on{background:rgba(255,255,255,.06);color:var(--txt)}
+.msg{display:none;font-size:12px;padding:10px 12px;border-radius:12px;margin-bottom:10px}.msg.ok{display:block;background:rgba(40,197,143,.1);border:1px solid rgba(40,197,143,.25);color:var(--green)}.msg.err{display:block;background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.25);color:var(--red)}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}.lbl{font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em}.inp{min-height:44px;width:100%;padding:12px 14px;border-radius:14px;border:1px solid var(--border2);background:var(--bg3);color:var(--txt);font:500 14px 'Inter',sans-serif;outline:none}.inp:focus{border-color:var(--accent)}
+.btn{min-height:44px;width:100%;border:none;border-radius:14px;background:var(--accent);color:#fff;font:800 14px 'Syne',sans-serif;cursor:pointer;padding:12px 16px}.btn.sec{background:transparent;border:1px solid var(--border2);color:var(--txt)}.btn:disabled{opacity:.55;cursor:not-allowed}
+.note{font-size:12px;color:var(--txt3);line-height:1.6;margin-top:10px}
+#app{min-height:100vh;display:flex;flex-direction:column} #app.h{display:none}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:rgba(13,13,15,.9);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:30}.brand{font-family:'Syne',sans-serif;font-size:16px;font-weight:800}.brand span{color:var(--accent2)}.user{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}.pill{font-size:12px;color:var(--txt2);border:1px solid var(--border);background:var(--bg2);padding:8px 10px;border-radius:999px;max-width:42vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.btn-ghost{min-height:40px;padding:0 14px;border-radius:12px;border:1px solid var(--border2);background:transparent;color:var(--txt2);cursor:pointer}
+.main{width:100%;max-width:1100px;margin:0 auto;padding:16px 16px calc(84px + env(safe-area-inset-bottom))}
+.cards{display:flex;gap:10px;overflow:auto;padding-bottom:8px;scrollbar-width:none}.cards::-webkit-scrollbar{display:none}.mini{min-width:170px;flex:0 0 auto;border:1px solid var(--border);background:var(--bg2);border-radius:18px;padding:14px;cursor:pointer;text-align:left}.mini.on{outline:2px solid var(--accent);outline-offset:-2px}.mini .m1{font-size:11px;color:var(--txt3);text-transform:uppercase;letter-spacing:.08em}.mini .m2{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-top:6px}.mini .m3{font-size:12px;color:var(--txt2);margin-top:6px}
+.panel{display:none}.panel.on{display:block}
+.grid-home{display:grid;grid-template-columns:1.2fr .8fr;gap:14px;margin-top:14px}
+.card{background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));border:1px solid var(--border);border-radius:24px;padding:18px}
+.loyalty{min-height:220px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;background:#1C1C1E;position:relative;overflow:hidden}.loyalty::after{content:'';position:absolute;right:-40px;top:-40px;width:170px;height:170px;border-radius:50%;background:rgba(255,255,255,.08)}.ltop,.lbot{position:relative;z-index:1}.lrow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}.lname{font-family:'Syne',sans-serif;font-size:18px;font-weight:700}.ltier{font-size:10px;letter-spacing:.1em;text-transform:uppercase;background:rgba(255,255,255,.18);padding:4px 10px;border-radius:999px}.lpts{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;line-height:1}.lsub{font-size:12px;opacity:.8;margin-top:4px}.lbar{width:70px;height:4px;border-radius:3px;background:rgba(255,255,255,.28);margin-top:14px}.lclient{font-size:13px;opacity:.85;margin-top:8px}.muted{color:var(--txt3)}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:18px;padding:14px;text-align:center}.kv{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1}.kl{font-size:11px;color:var(--txt2);margin-top:6px}
+.section{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;margin-bottom:10px}.subtle{font-size:12px;color:var(--txt2);line-height:1.6}
+.list{display:flex;flex-direction:column;gap:10px}
+.rw{display:flex;align-items:center;gap:12px;background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:12px}.re{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);font-size:20px}.ri{flex:1;min-width:0}.rn{font-size:13px;font-weight:600}.rm{font-size:11px;color:var(--txt2);margin-top:3px}.rp{font-size:12px;color:var(--gold);font-weight:700}.tag{font-size:10px;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.05);color:var(--txt2)}.rw.locked{opacity:.45}.rw button{min-height:38px;padding:0 12px;border-radius:12px;border:none;background:var(--accent);color:#fff;font-weight:700;cursor:pointer}.rw button[disabled]{background:#333;color:#777;cursor:not-allowed}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}.history{display:flex;flex-direction:column;gap:8px}.tx{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--border)}.tx:last-child{border-bottom:none}.ico{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}.tmain{flex:1;min-width:0}.tdesc{font-size:13px;font-weight:500}.tdate{font-size:11px;color:var(--txt3);margin-top:2px}.tpts{font-size:13px;font-weight:700;flex-shrink:0}
+.ncard{display:flex;gap:10px;padding:12px;border:1px solid var(--border);background:var(--bg2);border-radius:16px;margin-bottom:10px}.nicon{width:34px;height:34px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(108,99,255,.15);flex-shrink:0}.ntxt{flex:1;min-width:0}.ntitle{font-size:13px;font-weight:700}.nbody{font-size:12px;color:var(--txt2);line-height:1.5;margin-top:4px}.ndate{font-size:10px;color:var(--txt3);margin-top:4px}
+.profile{display:grid;grid-template-columns:1fr 1fr;gap:14px}.phead{display:flex;gap:12px;align-items:center;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:16px;margin-bottom:14px}.av{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(108,99,255,.14);color:var(--accent2);font-family:'Syne',sans-serif;font-weight:800;font-size:20px}.pname{font-family:'Syne',sans-serif;font-size:18px;font-weight:800}.ptier{display:inline-flex;align-items:center;gap:6px;margin-top:4px;background:rgba(201,147,58,.14);color:var(--gold);font-size:11px;padding:4px 10px;border-radius:999px;font-weight:700}
+.walletBtns{display:flex;flex-direction:column;gap:8px;margin-top:12px}.wbtn{min-height:44px;width:100%;display:flex;align-items:center;justify-content:flex-start;gap:12px;border:none;border-radius:14px;padding:12px 14px;font-weight:700;cursor:pointer}.wbtn.apple{background:#000;color:#fff}.wbtn.google{background:#fff;color:#333;border:1px solid var(--border2)}.wbtn.samsung{background:#1428A0;color:#fff}.wicon{width:26px;height:26px;border-radius:8px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;padding:16px;z-index:80}.modal.h{display:none}.mo{width:100%;max-width:420px;background:var(--bg2);border:1px solid var(--border2);border-radius:22px;padding:18px}.mot{display:flex;justify-content:space-between;align-items:center;font-family:'Syne',sans-serif;font-size:15px;font-weight:800;margin-bottom:14px}.x{background:none;border:none;color:var(--txt2);font-size:22px;cursor:pointer;line-height:1}
+.toast{position:fixed;left:50%;bottom:78px;transform:translateX(-50%) translateY(8px);background:#fff;color:#111;padding:10px 16px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;transition:all .25s;z-index:9999;pointer-events:none;white-space:nowrap}.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}.toast.ok{background:var(--green);color:#fff}.toast.err{background:var(--red);color:#fff}
+.bottom{position:fixed;left:0;right:0;bottom:0;background:rgba(13,13,15,.9);backdrop-filter:blur(12px);border-top:1px solid var(--border);padding:8px 8px calc(8px + env(safe-area-inset-bottom));display:grid;grid-template-columns:repeat(5,1fr);gap:6px;z-index:40}.b{min-height:56px;border:none;background:none;color:var(--txt3);border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;text-transform:uppercase;letter-spacing:.05em;cursor:pointer}.b.on{color:var(--accent2);background:rgba(255,255,255,.04)}.b svg{width:22px;height:22px;stroke:currentColor;stroke-width:1.6;fill:none}
+.qr{display:flex;align-items:center;justify-content:center;min-height:220px;background:var(--bg2);border:1px solid var(--border);border-radius:18px;margin-top:12px;padding:14px}
+@media(max-width:980px){.grid-home,.profile,.row{grid-template-columns:1fr}.main{padding-bottom:92px}.pill{max-width:60vw}}
+</style>
+</head>
+<body>
+<div id="auth">
+  <div class="box">
+    <div class="logo">loyalty<span>OS</span></div>
+    <div class="sub">Accédez à vos cartes, vos points et vos récompenses.</div>
+    <div class="tabs"><button class="tab on" id="t-login" onclick="am('login')">Connexion</button><button class="tab" id="t-reg" onclick="am('register')">Inscription</button></div>
+    <div class="msg" id="msg"></div>
+    <div id="reg-extra" style="display:none">
+      <div class="field"><div class="lbl">Nom complet *</div><input class="inp" id="r-name" placeholder="Sophie Martin"></div>
+      <div class="field"><div class="lbl">Code commerce (optionnel)</div><input class="inp" id="r-code" placeholder="ID, email ou nom du commerce"></div>
+    </div>
+    <div class="field"><div class="lbl">Email *</div><input class="inp" id="email" type="email" placeholder="vous@exemple.fr"></div>
+    <div class="field"><div class="lbl">Mot de passe *</div><input class="inp" id="pass" type="password" placeholder="••••••••"></div>
+    <button class="btn" id="main-btn" onclick="auth('login')">Se connecter</button>
+    <div style="height:10px"></div>
+    <button class="btn sec" id="sec-btn" onclick="auth('register')">Créer une carte</button>
+    <div class="note">Le même email peut posséder plusieurs cartes sur plusieurs commerces.</div>
+  </div>
+</div>
+
+<div id="app" class="h">
+  <div class="top">
+    <div class="brand">loyalty<span>OS</span></div>
+    <div class="user">
+      <div class="pill" id="current-merchant">—</div>
+      <button class="btn-ghost" onclick="logout()">Déconnexion</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div id="cards-wrap" class="cards"></div>
+
+    <div class="panel on" id="p-home">
+      <div class="grid-home">
+        <div class="card loyalty" id="loyalty-card">
+          <div class="ltop">
+            <div class="lrow"><div class="lname" id="lc-brand">—</div><div class="ltier" id="lc-tier">SILVER</div></div>
+          </div>
+          <div class="lbot">
+            <div class="lpts" id="lc-pts">0</div>
+            <div class="lsub">points disponibles</div>
+            <div class="lbar"></div>
+            <div class="lclient" id="lc-name">—</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="section">Progression</div>
+          <div class="subtle" id="prog-text">—</div>
+          <div style="margin-top:14px;height:10px;background:var(--bg3);border-radius:999px;overflow:hidden"><div id="prog-fill" style="height:100%;width:0;background:var(--accent);border-radius:999px"></div></div>
+          <div class="kpis">
+            <div class="kpi"><div class="kv" id="k-visits">—</div><div class="kl">Visites</div></div>
+            <div class="kpi"><div class="kv" id="k-points">—</div><div class="kl">Points</div></div>
+            <div class="kpi"><div class="kv" id="k-value">—</div><div class="kl">Valeur €</div></div>
+          </div>
+          <div class="walletBtns">
+            <button class="wbtn apple" onclick="addToWallet('apple')"><div class="wicon">🍎</div><span>Ajouter à Apple Wallet</span></button>
+            <button class="wbtn samsung" onclick="addToWallet('samsung')"><div class="wicon">📱</div><span>Ajouter à Samsung Wallet</span></button>
+            <button class="wbtn google" onclick="addToWallet('google')"><div class="wicon">🔎</div><span>Ajouter à Google Wallet</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="p-rewards">
+      <div class="section">Récompenses disponibles</div>
+      <div class="subtle" style="margin-bottom:12px">Les récompenses sont liées au commerce actif de la carte sélectionnée.</div>
+      <div id="rewards-list" class="list"></div>
+    </div>
+
+    <div class="panel" id="p-history">
+      <div class="section">Historique</div>
+      <div id="history-list" class="history card"></div>
+    </div>
+
+    <div class="panel" id="p-notifs">
+      <div class="section">Notifications</div>
+      <div id="notifs-list"></div>
+    </div>
+
+    <div class="panel" id="p-profile">
+      <div class="phead">
+        <div class="av" id="avatar">—</div>
+        <div><div class="pname" id="profile-name">—</div><div class="ptier" id="profile-tier">★ Silver</div><div class="subtle" style="margin-top:8px" id="profile-since">Membre depuis —</div></div>
+      </div>
+      <div class="profile">
+        <div class="card">
+          <div class="section">Mes informations</div>
+          <div class="field"><div class="lbl">Nom complet</div><input class="inp" id="edit-name"></div>
+          <div class="field"><div class="lbl">Email</div><input class="inp" id="edit-email" type="email"></div>
+          <div class="field"><div class="lbl">Téléphone</div><input class="inp" id="edit-phone"></div>
+          <div class="field"><div class="lbl">Nouveau mot de passe (optionnel)</div><input class="inp" id="edit-pass" type="password"></div>
+          <button class="btn" onclick="saveProfile()">Sauvegarder</button>
+        </div>
+        <div class="card">
+          <div class="section">Wallet</div>
+          <div class="subtle" id="wallet-status">Chargement…</div>
+          <div id="qr-wrap" class="qr"><div class="subtle">Génération du QR…</div></div>
+          <div class="walletBtns">
+            <button class="wbtn apple" onclick="addToWallet('apple')"><div class="wicon">🍎</div><span>Apple Wallet</span></button>
+            <button class="wbtn samsung" onclick="addToWallet('samsung')"><div class="wicon">📱</div><span>Samsung Wallet</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom">
+    <button class="b on" onclick="sw('home')"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/><path d="M9 21v-7h6v7"/></svg><span>Carte</span></button>
+    <button class="b" onclick="sw('rewards')"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg><span>Récompenses</span></button>
+    <button class="b" onclick="sw('history')"><svg viewBox="0 0 24 24"><path d="M12 8v5l3 2"/><path d="M4 4v5h5"/><path d="M20 12a8 8 0 10-2.34 5.66"/></svg><span>Historique</span></button>
+    <button class="b" onclick="sw('notifs')"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg><span>Alertes</span></button>
+    <button class="b" onclick="sw('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0116 0"/></svg><span>Profil</span></button>
+  </nav>
+</div>
+
+<div id="redeem-modal" class="modal h">
+  <div class="mo">
+    <div class="mot"><span id="redeem-title">Récompense</span><button class="x" onclick="cm('redeem-modal')">×</button></div>
+    <div id="redeem-body" class="subtle"></div>
+    <div style="height:12px"></div>
+    <button class="btn" id="redeem-btn" onclick="confirmRedeem()">Utiliser</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL='https://qqcfmbpixdeiczobqnqa.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxY2ZtYnBpeGRlaWN6b2JxbnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MjMxMDMsImV4cCI6MjA5MDM5OTEwM30.qTQvfalYS-V39M37BJdMQbXeMJBJTuzM44RMzoqmW5I';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+const state={mode:'login',email:'',pass:'',cards:[],index:0,merchant:null,rewards:[],txns:[],notifs:[],cfg:{}};
+let redeemTarget=null;
+function norm(v){return String(v||'').trim().toLowerCase()}
+function esc(s){return String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
+function showToast(t,type='ok'){const el=document.getElementById('toast');el.textContent=t;el.className='toast '+type+' on';clearTimeout(showToast._t);showToast._t=setTimeout(()=>el.className='toast',1800)}
+function am(mode){state.mode=mode;document.getElementById('t-login').classList.toggle('on',mode==='login');document.getElementById('t-reg').classList.toggle('on',mode==='register');document.getElementById('reg-extra').style.display=mode==='register'?'block':'none';document.getElementById('main-btn').textContent=mode==='login'?'Se connecter':'Créer une carte';document.getElementById('sec-btn').textContent=mode==='login'?'Créer une carte':'Se connecter';document.getElementById('main-btn').onclick=()=>auth(mode);document.getElementById('sec-btn').onclick=()=>auth(mode==='login'?'register':'login');}
+function sw(id){['home','rewards','history','notifs','profile'].forEach((p,i)=>{document.getElementById('p-'+p).classList.toggle('on',p===id);document.querySelectorAll('.b')[i].classList.toggle('on',p===id)});if(id==='rewards')renderRewards();if(id==='history')renderHistory();if(id==='notifs')renderNotifs();if(id==='profile')renderProfile();}
+function cm(id){document.getElementById(id).classList.add('h')}
+function om(id){document.getElementById(id).classList.remove('h')}
+async function firstActiveMerchant(){const {data}=await sb.from('merchants').select('id,shop_name,email,card_color,pts_per_euro,first_reward,validity').eq('active',true).limit(1);return data?.[0]||null}
+async function resolveMerchant(code){if(!code) return await firstActiveMerchant(); const q=norm(code); const {data}=await sb.from('merchants').select('id,shop_name,email,card_color,pts_per_euro,first_reward,validity').or(`id.eq.${q},email.ilike.%${q}%,shop_name.ilike.%${q}%`).eq('active',true).limit(1); return data?.[0]||await firstActiveMerchant()}
+function getAuth(){try{return JSON.parse(sessionStorage.getItem('los_client_auth')||'null')}catch(e){return null}}
+async function auth(mode){
+  const email=norm(document.getElementById('email').value); const pass=document.getElementById('pass').value.trim(); const name=document.getElementById('r-name')?.value.trim()||''; const code=document.getElementById('r-code')?.value.trim()||'';
+  if(!email||!pass) return setMsg('Email et mot de passe sont obligatoires.','err');
+  try{
+    const merchant=await resolveMerchant(code);
+    if(!merchant) return setMsg('Aucun commerce actif disponible.','err');
+    if(mode==='register'){
+      if(!name) return setMsg('Le nom complet est obligatoire.','err');
+      const {data:exists}=await sb.from('clients').select('id').eq('merchant_id',merchant.id).eq('email',email).limit(1);
+      if(exists?.length) return setMsg('Cette carte existe déjà pour ce commerce.','err');
+      const payload={merchant_id:merchant.id,name,email,pass,points:0,tier:'Silver',wallet:[],visits:0};
+      const {error}=await sb.from('clients').insert(payload);
+      if(error) throw error;
+      showToast('Client ajouté','ok');
+    }
+    const {data,error}=await sb.from('clients').select('id,merchant_id,name,email,phone,points,tier,wallet,visits,created_at').eq('email',email).eq('pass',pass).order('created_at',{ascending:false});
+    if(error) throw error;
+    if(!data?.length) return setMsg('Email ou mot de passe incorrect.','err');
+    sessionStorage.setItem('los_client_auth',JSON.stringify({email,pass}));
+    state.email=email; state.pass=pass; state.cards=data; state.index=0;
+    await boot();
+  }catch(e){setMsg(e.message||'Erreur de connexion.','err')}
+}
+function setMsg(text,type='ok'){const el=document.getElementById('msg'); if(!text){el.style.display='none';el.className='msg';el.textContent='';return;} el.textContent=text;el.className='msg '+type;el.style.display='block'}
+function currentCard(){return state.cards[state.index]||state.cards[0]||null}
+async function boot(){document.getElementById('auth').classList.add('h');document.getElementById('app').classList.remove('h');await loadConfig(); await renderCards(); await loadCurrent(); sw('home')}
+async function loadConfig(){const {data}=await sb.from('admin_config').select('key,value'); state.cfg=Object.fromEntries((data||[]).map(x=>[x.key,x.value]));}
+async function renderCards(){const box=document.getElementById('cards-wrap'); if(!state.cards.length) return; box.innerHTML=state.cards.map((c,i)=>`<button class="mini ${i===state.index?'on':''}" onclick="pickCard(${i})"><div class="m1">Carte ${i+1}</div><div class="m2">${esc(c.name||'Client')}</div><div class="m3">${esc(c.email||'')}</div></button>`).join('');}
+async function pickCard(i){state.index=i; await renderCards(); await loadCurrent(); sw('home')}
+async function loadCurrent(){const c=currentCard(); if(!c) return; const {data:m}=await sb.from('merchants').select('id,shop_name,email,card_color,pts_per_euro,first_reward,validity,plan,active').eq('id',c.merchant_id).limit(1); state.merchant=m?.[0]||null; document.getElementById('current-merchant').textContent=state.merchant?.shop_name||'—'; document.getElementById('lc-brand').textContent=state.merchant?.shop_name||'Fidélité'; document.getElementById('lc-name').textContent=`${c.name||'—'} · ${c.email||''}`; document.getElementById('lc-pts').textContent=(c.points||0).toLocaleString('fr-FR'); document.getElementById('lc-tier').textContent=(c.tier||'Silver').toUpperCase(); document.getElementById('loyalty-card').style.background=state.merchant?.card_color||'#1C1C1E'; document.getElementById('profile-since').textContent='Membre depuis '+fmtDate(c.created_at); document.getElementById('profile-name').textContent=c.name||'—'; document.getElementById('profile-tier').textContent='★ '+(c.tier||'Silver'); document.getElementById('avatar').textContent=(c.name||'?').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase(); document.getElementById('edit-name').value=c.name||''; document.getElementById('edit-email').value=c.email||''; document.getElementById('edit-phone').value=c.phone||''; document.getElementById('wallet-status').textContent=walletSummary(c); await renderQr(); await loadMerchantData(); renderHome(); }
+function walletSummary(c){const w=c.wallet||[]; return w.length?`Wallets installés : ${w.join(', ')}`:'Aucun wallet installé.'}
+async function loadMerchantData(){const c=currentCard(); if(!c||!state.merchant) return; const [r1,r2,r3]=await Promise.all([sb.from('rewards').select('*').eq('merchant_id',c.merchant_id).eq('active',true), sb.from('transactions').select('*').eq('merchant_id',c.merchant_id).eq('client_id',c.id).order('created_at',{ascending:false}).limit(100), sb.from('notifications').select('*').eq('merchant_id',c.merchant_id).order('created_at',{ascending:false}).limit(50)]); state.rewards=r1.data||[]; state.txns=r2.data||[]; state.notifs=r3.data||[]; }
+function rewardCost(r){return Number(r.points_required ?? r.points ?? r.cost ?? 0)}
+function rewardValue(r){return Number(r.value ?? r.amount ?? 0)}
+function renderHome(){const c=currentCard(), m=state.merchant; if(!c||!m) return; const points=Number(c.points||0), first=Number(m.first_reward||Number(state.cfg.first_reward||200)), step=Number(m.pts_per_euro||state.cfg.points_per_euro||10); document.getElementById('k-visits').textContent=(c.visits||0).toLocaleString('fr-FR'); document.getElementById('k-points').textContent=points.toLocaleString('fr-FR'); document.getElementById('k-value').textContent=((points/step)||0).toFixed(2)+' €'; document.getElementById('prog-text').textContent=points>=first?`Niveau suivant : ${first} pts atteint, regardez les récompenses.`:`${first-points} pts restants pour débloquer la première récompense.`; document.getElementById('prog-fill').style.width=Math.max(0,Math.min(100,(points/Math.max(1,first))*100))+'%'; }
+function renderRewards(){const c=currentCard(); const box=document.getElementById('rewards-list'); if(!c){box.innerHTML='<div class="subtle">Aucune carte.</div>';return;} const points=Number(c.points||0); if(!state.rewards.length){box.innerHTML='<div class="card"><div class="subtle">Aucune récompense publiée par ce commerce.</div></div>';return;} box.innerHTML=state.rewards.map(r=>{const cost=rewardCost(r), ok=points>=cost; return `<div class="rw ${ok?'':'locked'}"><div class="re">${esc(r.emoji||'⭐')}</div><div class="ri"><div class="rn">${esc(r.name||'Récompense')}</div><div class="rm">${esc(r.description||'')}</div><div class="rp">${cost.toLocaleString('fr-FR')} pts${rewardValue(r)?' · '+rewardValue(r).toFixed(2)+' €':''}</div></div><div class="tag">${ok?'Disponible':'Verrouillé'}</div><button ${ok?'':'disabled'} onclick="openRedeem('${r.id}')">Utiliser</button></div>`}).join('')}
+function fmtDate(d){if(!d)return'—'; return new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'})}
+function renderHistory(){const box=document.getElementById('history-list'); if(!state.txns.length){box.innerHTML='<div class="subtle">Aucune transaction.</div>';return;} box.innerHTML=state.txns.map(t=>`<div class="tx"><div class="ico" style="background:${t.type==='earn'?'rgba(40,197,143,.12)':'rgba(255,92,92,.12)'};color:${t.type==='earn'?'var(--green)':'var(--red)'}">${t.type==='earn'?'+':'−'}</div><div class="tmain"><div class="tdesc">${esc(t.description||'Transaction')}</div><div class="tdate">${fmtDate(t.created_at)}</div></div><div class="tpts" style="color:${t.type==='earn'?'var(--green)':'var(--red)'}">${t.type==='earn'?'+':'−'}${Number(t.points||0)} pts</div></div>`).join('')}
+function renderNotifs(){const box=document.getElementById('notifs-list'); if(!state.notifs.length){box.innerHTML='<div class="subtle">Aucune notification.</div>';return;} box.innerHTML=state.notifs.map(n=>`<div class="ncard"><div class="nicon">🔔</div><div class="ntxt"><div class="ntitle">${esc(n.title||'Notification')}</div><div class="nbody">${esc(n.body||'')}</div><div class="ndate">${fmtDate(n.created_at||n.sent_at)}</div></div></div>`).join('')}
+function renderProfile(){const c=currentCard(); if(!c)return; document.getElementById('wallet-status').textContent=walletSummary(c)}
+async function saveProfile(){const c=currentCard(); if(!c) return; const obj={name:document.getElementById('edit-name').value.trim(), email:norm(document.getElementById('edit-email').value), phone:document.getElementById('edit-phone').value.trim()}; const np=document.getElementById('edit-pass').value.trim(); if(np) obj.pass=np; if(!obj.name||!obj.email) return showToast('Nom et email requis','err'); try{const ids=state.cards.map(x=>x.id); const {error}=await sb.from('clients').update(obj).in('id',ids); if(error) throw error; sessionStorage.setItem('los_client_auth',JSON.stringify({email:obj.email,pass:np||state.pass})); state.email=obj.email; state.pass=np||state.pass; showToast('Profil sauvegardé','ok'); await refreshSession(); }catch(e){showToast(e.message||'Erreur','err')}}
+async function refreshSession(){const {data,error}=await sb.from('clients').select('id,merchant_id,name,email,phone,points,tier,wallet,visits,created_at').eq('email',state.email).eq('pass',state.pass).order('created_at',{ascending:false}); if(error) throw error; state.cards=data||[]; if(!state.cards.length){logout(); return;} if(state.index>=state.cards.length) state.index=0; await boot()}
+function buildWalletPayload(provider){const c=currentCard(),m=state.merchant; const payload={provider,merchant_id:m?.id,merchant_name:m?.shop_name,client_id:c?.id,email:c?.email,name:c?.name,points:c?.points||0,tier:c?.tier||'Silver',ts:Date.now()}; return payload}
+function buildWalletLink(provider){const payload=buildWalletPayload(provider); const json=btoa(unescape(encodeURIComponent(JSON.stringify(payload)))); const external=''; return external?`${external}?p=${encodeURIComponent(json)}`:`${location.origin}${location.pathname.replace('client.html','client.html')}#wallet=${provider}:${encodeURIComponent(json)}`}
+async function renderQr(){const wrap=document.getElementById('qr-wrap'); wrap.innerHTML='<div id="qr-box"></div>'; const provider='apple'; const link=buildWalletLink(provider); const el=document.getElementById('qr-box'); el.innerHTML=''; new QRCode(el,{text:link,width:180,height:180,colorDark:'#111',colorLight:'#fff'});}
+async function addToWallet(provider){const link=buildWalletLink(provider); try{await navigator.clipboard.writeText(link); showToast('Lien wallet copié','ok')}catch(e){showToast('Lien wallet prêt','ok')} window.open(link,'_blank')}
+let pendingRedeem=null;
+function openRedeem(id){const r=state.rewards.find(x=>x.id===id); if(!r) return; pendingRedeem=r; document.getElementById('redeem-title').textContent=r.name||'Récompense'; document.getElementById('redeem-body').innerHTML=`${esc(r.description||'')}<br><br>Coût: <b>${rewardCost(r)} pts</b>`; om('redeem-modal');}
+async function confirmRedeem(){const r=pendingRedeem, c=currentCard(); if(!r||!c) return; const cost=rewardCost(r), points=Number(c.points||0); if(points<cost) return showToast('Points insuffisants','err'); try{const newPoints=points-cost; const {error}=await sb.from('clients').update({points:newPoints}).eq('id',c.id); if(error) throw error; await sb.from('transactions').insert({client_id:c.id,merchant_id:c.merchant_id,type:'redeem',points:cost,description:`Récompense : ${r.name||'Récompense'}`}); await sb.from('rewards').update({usage_count:Number(r.usage_count||0)+1}).eq('id',r.id); showToast('Récompense utilisée','ok'); cm('redeem-modal'); await refreshSession(); }catch(e){showToast(e.message||'Erreur','err')}}
+function logout(){sessionStorage.removeItem('los_client_auth'); sessionStorage.removeItem('los_client_selected'); location.reload()}
+function setFromAuth(){const a=getAuth(); if(!a) return; document.getElementById('email').value=a.email||''; document.getElementById('pass').value=a.pass||'';}
+function om(id){document.getElementById(id).classList.remove('h')}
+function cm(id){document.getElementById(id).classList.add('h')}
+async function startup(){setFromAuth(); const url=new URL(location.href); const merchant=url.searchParams.get('merchant'); if(merchant && !document.getElementById('r-code').value) document.getElementById('r-code').value=merchant; const a=getAuth(); if(!a) return; state.email=a.email; state.pass=a.pass; const {data,error}=await sb.from('clients').select('id,merchant_id,name,email,phone,points,tier,wallet,visits,created_at').eq('email',a.email).eq('pass',a.pass).order('created_at',{ascending:false}); if(error||!data?.length) return; state.cards=data; await boot()}
+window.addEventListener('load',startup);
+</script>
+</body>
+</html>
