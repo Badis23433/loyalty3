@@ -156,6 +156,23 @@ body{background:radial-gradient(1000px 500px at 50% -10%, rgba(108,99,255,.16), 
 const SB_URL='https://qqcfmbpixdeiczobqnqa.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxY2ZtYnBpeGRlaWN6b2JxbnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MjMxMDMsImV4cCI6MjA5MDM5OTEwM30.qTQvfalYS-V39M37BJdMQbXeMJBJTuzM44RMzoqmW5I';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
+const { data, error } = await supabase
+  .from("clients")
+  .insert({
+    name: name,
+    email: email,
+    pass: password,
+    points: 0,
+    merchant_id: merchant.id
+  });
+
+console.log("DATA:", data);
+console.log("ERROR:", error);
+
+if(error){
+  alert("Erreur : " + error.message);
+  return;
+}
 const state={merchant:null,clients:[],txns:[],rewards:[],notifHistory:[],selectedClientId:null,currentClient:null,selectedRewardId:null,cardColor:'#1C1C1E'};
 const SWATCHES=['#1C1C1E','#1428A0','#1A56E8','#1A6B35','#8B2020','#C9933A'];
 function esc(s){return String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
