@@ -114,9 +114,6 @@ const SB_URL='https://qqcfmbpixdeiczobqnqa.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFxY2ZtYnBpeGRlaWN6b2JxbnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MjMxMDMsImV4cCI6MjA5MDM5OTEwM30.qTQvfalYS-V39M37BJdMQbXeMJBJTuzM44RMzoqmW5I';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
 const state={merchants:[],clients:[],txns:[],rewards:[],logs:[],cfg:{},selectedMerchantId:null,selectedClientId:null};
-const first_reward = document.getElementById("w-first")
-  ? parseInt(document.getElementById("w-first").value)
-  : 200;
 function esc(s){return String(s??'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]))}
 function norm(v){return String(v||'').trim().toLowerCase()}
 function showToast(t,type='ok'){const el=document.getElementById('toast');el.textContent=t;el.className='toast '+type+' on';clearTimeout(showToast._t);showToast._t=setTimeout(()=>el.className='toast',1800)}
